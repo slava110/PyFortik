@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/PyFortik.iml" filepath="$PROJECT_DIR$/.idea/PyFortik.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pyfortik/.idea/pyfortik.iml" filepath="$PROJECT_DIR$/pyfortik/.idea/pyfortik.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pyfortik2/.idea/pyfortik2.iml" filepath="$PROJECT_DIR$/pyfortik2/.idea/pyfortik2.iml" />
+    </modules>
+  </component>
+</project>
