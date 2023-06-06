@@ -1,41 +1,62 @@
-from typing import List, Iterator
+from typing import List
 
-from ast_util import FortikASTBlock, FortikASTElement
+from ast_util import FortikASTBlock, FortikASTWalker
+from opcodes import commands, operators
 
 
 class FortikCompiler:
 
     def compile_to_bytecode(self, ast: FortikASTBlock) -> list[int]:
-        bytecode: List[int] = list()
-
         procedures_bytecode: List[int] = list()
-        procedures_indicies: dict[str, int] = dict()
-        next_procedure_index: int = -1
 
-        scope = CompilationScope(ast.__iter__(), None)
+        callable_names: dict[str, int] = dict()
+        next_callable_name_index: int = 0
 
-        to_process = [ast]
+        scope = CompilationScope(ast.__iter__())
 
-        while scope is not None:
+        while True:
+            deeper = False
             for (cmd, arg) in scope.ast_walker:
-                if arg is FortikASTBlock:
-                    self.encode_cmd(bytecode, 'push', len(procedures_bytecode))
-                    procedures_bytecode.append()
+                if cmd == 'push' and isinstance(arg, list):
+                    scope.encode_cmd(cmd, len(procedures_bytecode))
+
+                    scope = scope.child(arg.__iter__())
+                    deeper = True
                     break
-                elif cmd == 'is':
-                    self.encode_cmd(bytecode, cmd, )
-                scope = scope.parent
-            bytecode.append(5)
+                elif cmd == 'to' or cmd == 'is' or cmd == 'call':
+                    if arg in callable_names:
+                        scope.encode_cmd(cmd, callable_names[arg])
+                    else:
+                        callable_names[arg] = next_callable_name_index
+                        scope.encode_cmd(cmd, next_callable_name_index)
+                        next_callable_name_index = next_callable_name_index + 1
+                elif cmd == 'op':
+                    scope.encode_cmd(cmd, list(operators.keys()).index(arg))
+                else:
+                    scope.encode_cmd(cmd, arg)
 
-        return bytecode
+            if not deeper:
+                scope.bytecode.append(5)
+                if scope.parent is not None:
+                    procedures_bytecode.extend(scope.bytecode)
+                    scope = scope.parent
+                else:
+                    break
 
-    def encode_cmd(self, bytecode: list[int], cmd: str, arg: int):
-        pass
-        # self.add_cmd(bytecode, cmd, arg)
+        return [len(procedures_bytecode)] + procedures_bytecode + scope.bytecode
 
 
 class CompilationScope:
 
-    def __init__(self, ast_walker: Iterator[tuple[str, FortikASTElement]], parent: 'CompilationScope' = None):
+    def __init__(self, ast_walker: FortikASTWalker, parent: 'CompilationScope' = None):
         self.ast_walker = ast_walker
         self.parent = parent
+        self.bytecode: List[int] = list()
+
+    def encode_cmd(self, cmd: str, arg: int):
+        print(f"Encoding { cmd }({ arg })")
+        print(f"> { commands.index(cmd) | (arg << 3) }")
+        self.bytecode.append(commands.index(cmd) | (arg << 3))
+
+    def child(self, ast_walker: FortikASTWalker) -> 'CompilationScope':
+        return CompilationScope(parent=self, ast_walker=ast_walker)

@@ -49,10 +49,10 @@ class FortikParser:
                     raise ParsingError(f'Redundant closing bracket at line {pos[0]} character {pos[1]}')
                 parsing_scope = prev_scope
             elif lexem == 'is' or lexem == 'to':
-                arg = next(lexem_iterator, None)[1]
+                arg = next(lexem_iterator, None)
                 if arg is None:
                     raise ParsingError(f'Expected variable name at line {pos[0]} character {pos[1]}')
-                parsing_scope.command(lexem, arg)
+                parsing_scope.command(lexem, arg[1])
             elif lexem in opcodes.operators.keys():
                 parsing_scope.command('op', lexem)
             else:
